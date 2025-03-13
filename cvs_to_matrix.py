@@ -35,7 +35,7 @@ def importar_grafo_csv(nome_ficheiro):
 
 
 # Exemplo de uso
-matriz, mapa = importar_grafo_csv("grafo.csv")
+matriz, mapa = importar_grafo_csv("graph.csv")
 print("Matriz de Adjacência:")
 print(matriz)
 print("Mapeamento dos nós:", mapa)
