@@ -19,7 +19,6 @@ class AStar:
             'G': 1,
             'H': 1
         }
-
         return H[n]
 
     def a_star_algorithm(self, start_node, stop_node):
@@ -27,7 +26,6 @@ class AStar:
         closed_list = set([])
 
         g = {}
-
         g[start_node] = 0
 
         parents = {}
@@ -37,38 +35,37 @@ class AStar:
             n = None
 
             for v in open_list:
-                if n == None or g[v] + self.h(v) < g[n] + self.h(n):
+                if n is None or g[v] + self.h(v) < g[n] + self.h(n):
                     n = v
 
-            if n == None:
+            if n is None:
                 print('Path does not exist!')
                 return None
 
             if n == stop_node:
                 reconst_path = []
+                total_cost = g[n]
 
                 while parents[n] != n:
                     reconst_path.append(n)
                     n = parents[n]
 
                 reconst_path.append(start_node)
-
                 reconst_path.reverse()
 
                 print('Path found: {}'.format(reconst_path))
-                return reconst_path
+                print('Total cost: {}'.format(total_cost))
+                return reconst_path, total_cost
 
             for (m, weight) in self.get_neighbors(n):
                 if m not in open_list and m not in closed_list:
                     open_list.add(m)
                     parents[m] = n
                     g[m] = g[n] + weight
-
                 else:
                     if g[m] > g[n] + weight:
                         g[m] = g[n] + weight
                         parents[m] = n
-
                         if m in closed_list:
                             closed_list.remove(m)
                             open_list.add(m)
