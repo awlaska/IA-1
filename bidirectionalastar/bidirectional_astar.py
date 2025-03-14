@@ -9,7 +9,7 @@ import math
 import heapq
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
-                "/../../Search_based_Planning/")
+                "/../../bidirectionalastar/")
 
 from bidirectionalastar import plotting, env
 
