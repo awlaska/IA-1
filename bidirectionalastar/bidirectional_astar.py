@@ -17,7 +17,7 @@ def load_graph_from_csv(file_path):
                 graph[node2] = []
 
             graph[node1].append((node2, cost))
-            graph[node2].append((node1, cost))  # Since the graph is bidirectional
+            graph[node2].append((node1, cost))
 
     return graph
 
@@ -29,8 +29,8 @@ class BidirectionalAStarGraph:
         self.goal = goal
         self.heuristic_type = heuristic_type
 
-        self.open_fwd = []  # Forward search open list
-        self.open_bwd = []  # Backward search open list
+        self.open_fwd = []
+        self.open_bwd = []
         self.closed_fwd = set()
         self.closed_bwd = set()
         self.g_fwd = {start: 0}
@@ -42,8 +42,7 @@ class BidirectionalAStarGraph:
         heapq.heappush(self.open_bwd, (self.h(goal, start), goal))
 
     def h(self, node1, node2):
-        """ Heuristic function assuming a basic Manhattan or Euclidean approach. """
-        return 0  # Placeholder (since we lack coordinates, we use 0 for Dijkstra-like behavior)
+        return 0
 
     def search(self):
         meeting_point = None

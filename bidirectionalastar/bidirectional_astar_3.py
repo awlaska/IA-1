@@ -24,7 +24,6 @@ class BidirectionalAStar:
         self.g_back = {}
 
     def init(self):
-        """Initialize search structures."""
         self.g_fore[self.s_start] = 0.0
         self.g_back[self.s_goal] = 0.0
         self.PARENT_fore[self.s_start] = None
@@ -70,13 +69,12 @@ class BidirectionalAStar:
         if s_meet:
             return self.extract_path(s_meet), self.CLOSED_fore, self.CLOSED_back
         else:
-            return None, self.CLOSED_fore, self.CLOSED_back  # No path found
+            return None, self.CLOSED_fore, self.CLOSED_back
 
     def get_neighbors(self, s):
         return self.graph.get(s, {}).keys()
 
     def extract_path(self, s_meet):
-        """Reconstruct the optimal path."""
         path_fore = []
         s = s_meet
         while s is not None:
@@ -98,8 +96,7 @@ class BidirectionalAStar:
         return self.g_back.get(s, math.inf) + self.h(s, self.s_start)
 
     def h(self, s, goal):
-        """Heuristic function (currently disabled)."""
-        return 0  # Can be modified if a heuristic is needed
+        return 0
 
     def cost(self, s_start, s_goal):
         edge = self.graph[s_start][s_goal]
@@ -108,7 +105,6 @@ class BidirectionalAStar:
                 self.weights['minutos'] * edge['minutos'])
 
 def load_graph_from_csv(filename):
-    """Load graph data from CSV file with bidirectional edges."""
     df = pd.read_csv(filename, header=None, names=["start", "end", "kms", "litros", "minutos"])
     graph = {}
 
@@ -122,17 +118,17 @@ def load_graph_from_csv(filename):
             graph[end] = {}
 
         graph[start][end] = edge_data
-        graph[end][start] = edge_data  # Ensure bidirectional edges
+        graph[end][start] = edge_data
 
     return graph
 
 def main():
-    filename = "../graph/graph3.csv"  # Adjust this if needed
+    filename = "../graph/graph3.csv"
     graph = load_graph_from_csv(filename)
 
     start_node = "A"
     goal_node = "L"
-    weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}  # Adjustable weights
+    weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
     bastar = BidirectionalAStar(start_node, goal_node, "none", graph, weights)
     path, visited_fore, visited_back = bastar.searching()
