@@ -33,7 +33,7 @@ def importar_grafo_csv_3(nome_ficheiro):
 
     return matriz_adjacencia, mapa_nos
 
-matriz_adjacencia, mapa_nos = importar_grafo_csv_3('cidades.csv')
+matriz_adjacencia, mapa_nos = importar_grafo_csv_3('../cidades.csv')
 
 # Exibir a matriz de adjacência
 for linha in matriz_adjacencia:

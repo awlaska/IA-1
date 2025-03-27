@@ -140,7 +140,7 @@ def load_graph_from_csv(filename):
 
 
 def main():
-    filename = "../graph/graph3.csv"
+    filename = "../graph3.csv"
     graph = load_graph_from_csv(filename)
 
     start_node = "A"
