@@ -1,3 +1,5 @@
+#TODO ValueError: could not convert string to float: 'distancia'
+
 import csv
 import heapq
 import math

@@ -123,8 +123,16 @@ def load_graph_from_csv(filename):
     return graph
 
 def main():
-    filename = "../graph/graph3.csv"
-    graph = load_graph_from_csv(filename)
+    choice = input(print("1. graph_3.csv\n2. cidades.csv"))
+    if choice == 1:
+        filename = "../graph3.csv"
+        graph = load_graph_from_csv(filename)
+    if choice == 2:
+        filename = "../cidades.csv"
+        graph = load_graph_from_csv(filename)
+    else:
+        filename = "../graph3.csv"
+        graph = load_graph_from_csv(filename)
 
     start_node = "A"
     goal_node = "L"
