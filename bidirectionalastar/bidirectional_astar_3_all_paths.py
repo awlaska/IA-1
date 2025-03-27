@@ -23,26 +23,24 @@ class BidirectionalAStar:
         self.PARENT_back = {}
         self.g_fore = {}
         self.g_back = {}
-        self.all_paths = []
+        self.meeting_nodes = []
 
     def init(self):
         self.g_fore[self.s_start] = 0.0
         self.g_back[self.s_goal] = 0.0
-        self.PARENT_fore[self.s_start] = None
-        self.PARENT_back[self.s_goal] = None
+        self.PARENT_fore[self.s_start] = []
+        self.PARENT_back[self.s_goal] = []
 
         heapq.heappush(self.OPEN_fore, (self.f_value_fore(self.s_start), self.s_start))
         heapq.heappush(self.OPEN_back, (self.f_value_back(self.s_goal), self.s_goal))
 
     def searching(self):
         self.init()
-        s_meet = None
 
         while self.OPEN_fore and self.OPEN_back:
             _, s_fore = heapq.heappop(self.OPEN_fore)
             if s_fore in self.PARENT_back:
-                s_meet = s_fore
-                self.all_paths.append(self.extract_path(s_meet))
+                self.meeting_nodes.append(s_fore)
 
             self.CLOSED_fore.add(s_fore)
 
@@ -50,13 +48,14 @@ class BidirectionalAStar:
                 new_cost = self.g_fore[s_fore] + self.cost(s_fore, s_n)
                 if s_n not in self.g_fore or new_cost < self.g_fore[s_n]:
                     self.g_fore[s_n] = new_cost
-                    self.PARENT_fore[s_n] = s_fore
+                    self.PARENT_fore[s_n] = [s_fore]
                     heapq.heappush(self.OPEN_fore, (self.f_value_fore(s_n), s_n))
+                elif new_cost == self.g_fore[s_n]:
+                    self.PARENT_fore[s_n].append(s_fore)
 
             _, s_back = heapq.heappop(self.OPEN_back)
             if s_back in self.PARENT_fore:
-                s_meet = s_back
-                self.all_paths.append(self.extract_path(s_meet))
+                self.meeting_nodes.append(s_back)
 
             self.CLOSED_back.add(s_back)
 
@@ -64,28 +63,46 @@ class BidirectionalAStar:
                 new_cost = self.g_back[s_back] + self.cost(s_back, s_n)
                 if s_n not in self.g_back or new_cost < self.g_back[s_n]:
                     self.g_back[s_n] = new_cost
-                    self.PARENT_back[s_n] = s_back
+                    self.PARENT_back[s_n] = [s_back]
                     heapq.heappush(self.OPEN_back, (self.f_value_back(s_n), s_n))
+                elif new_cost == self.g_back[s_n]:
+                    self.PARENT_back[s_n].append(s_back)
 
-        return self.all_paths if self.all_paths else None
+        if self.meeting_nodes:
+            return self.extract_all_paths(), self.CLOSED_fore, self.CLOSED_back
+        else:
+            return [], self.CLOSED_fore, self.CLOSED_back
 
     def get_neighbors(self, s):
         return self.graph.get(s, {}).keys()
 
-    def extract_path(self, s_meet):
-        path_fore = []
-        s = s_meet
-        while s is not None:
-            path_fore.append(s)
-            s = self.PARENT_fore.get(s)
+    def extract_all_paths(self):
+        all_paths = []
+        for node in self.meeting_nodes:
+            paths_fore = self.reconstruct_paths(self.PARENT_fore, node, direction='fore')
+            paths_back = self.reconstruct_paths(self.PARENT_back, node, direction='back')
+            for fore in paths_fore:
+                for back in paths_back:
+                    all_paths.append(fore + back[1:])
+        return all_paths
 
-        path_back = []
-        s = self.PARENT_back.get(s_meet)
-        while s is not None:
-            path_back.append(s)
-            s = self.PARENT_back.get(s)
-
-        return list(reversed(path_fore)) + path_back
+    def reconstruct_paths(self, parents, node, direction):
+        if direction == 'fore':
+            if not parents[node]:
+                return [[node]]
+            paths = []
+            for parent in parents[node]:
+                for path in self.reconstruct_paths(parents, parent, direction):
+                    paths.append(path + [node])
+            return paths
+        else:
+            if not parents[node]:
+                return [[node]]
+            paths = []
+            for parent in parents[node]:
+                for path in self.reconstruct_paths(parents, parent, direction):
+                    paths.append([node] + path)
+            return paths
 
     def f_value_fore(self, s):
         return self.g_fore.get(s, math.inf) + self.h(s, self.s_goal)
@@ -101,18 +118,6 @@ class BidirectionalAStar:
         return (self.weights['kms'] * edge['kms'] +
                 self.weights['litros'] * edge['litros'] +
                 self.weights['minutos'] * edge['minutos'])
-
-    def get_path_cost(self, path):
-        total_kms = 0
-        total_litros = 0
-        total_minutos = 0
-        for i in range(len(path) - 1):
-            start, end = path[i], path[i + 1]
-            edge_data = self.graph[start][end]
-            total_kms += edge_data['kms']
-            total_litros += edge_data['litros']
-            total_minutos += edge_data['minutos']
-        return total_kms, total_litros, total_minutos
 
 
 def load_graph_from_csv(filename):
@@ -143,33 +148,14 @@ def main():
     weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
     bastar = BidirectionalAStar(start_node, goal_node, "none", graph, weights)
-    all_paths = bastar.searching()
+    paths, visited_fore, visited_back = bastar.searching()
 
-    if all_paths:
-        print("Todos os caminhos encontrados:")
-        best_kms, best_litros, best_minutos = float('inf'), float('inf'), float('inf')
-        best_path_kms, best_path_litros, best_path_minutos = None, None, None
-
-        for path in all_paths:
-            total_kms, total_litros, total_minutos = bastar.get_path_cost(path)
-
-            if total_kms < best_kms:
-                best_kms = total_kms
-                best_path_kms = path
-
-            if total_litros < best_litros:
-                best_litros = total_litros
-                best_path_litros = path
-
-            if total_minutos < best_minutos:
-                best_minutos = total_minutos
-                best_path_minutos = path
-
-        print(f"\nCaminho otimizado para kms: {best_path_kms} com custo {best_kms} kms")
-        print(f"Caminho otimizado para litros: {best_path_litros} com custo {best_litros} litros")
-        print(f"Caminho otimizado para minutos: {best_path_minutos} com custo {best_minutos} minutos")
+    if paths:
+        print("All Paths:")
+        for i, path in enumerate(paths):
+            print(f"Path {i + 1}: {path}")
     else:
-        print("Nenhum caminho encontrado entre", start_node, "e", goal_node)
+        print("No path found between", start_node, "and", goal_node)
 
 
 if __name__ == '__main__':
