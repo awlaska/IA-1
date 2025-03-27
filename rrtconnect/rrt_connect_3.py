@@ -1,81 +1,107 @@
 import csv
-from heapq import heappop, heappush
+import os
+import random
+import math
+from collections import defaultdict
 
 def importar_grafo_csv(nome_arquivo):
-    mapa_nos = {}
-    arestas = []
-    
-    with open(nome_arquivo, newline='', encoding='utf-8') as arquivo:
-        leitor = csv.reader(arquivo)
-        next(leitor)  # Pular cabeçalho
-        
-        for linha in leitor:
-            origem, destino, pedagio, combustivel, distancia = linha
-            arestas.append((origem, destino, float(pedagio) + float(combustivel)))  # Soma pedágio + combustível como custo
+    """Importa o grafo do CSV e retorna a estrutura de adjacência"""
+    try:
+        caminho = os.path.join(os.path.dirname(__file__), nome_arquivo)
+        with open(caminho, newline='', encoding='utf-8') as arquivo:
+            leitor = csv.reader(arquivo)
+            next(leitor)  # Pular cabeçalho
             
-            if origem not in mapa_nos:
-                mapa_nos[origem] = len(mapa_nos)
-            if destino not in mapa_nos:
-                mapa_nos[destino] = len(mapa_nos)
-    
-    # Criar matriz de adjacência com custos
-    tamanho = len(mapa_nos)
-    matriz = [[float('inf')] * tamanho for _ in range(tamanho)]
-    
-    for origem, destino, custo in arestas:
-        i, j = mapa_nos[origem], mapa_nos[destino]
-        matriz[i][j] = custo
-    
-    return matriz, mapa_nos
+            grafo = defaultdict(dict)
+            cidades = set()
+            
+            for origem, destino, pedagio, combustivel, distancia in leitor:
+                custo = float(pedagio) + float(combustivel)
+                grafo[origem][destino] = custo
+                cidades.update([origem, destino])
+            
+            return grafo, sorted(cidades)
+            
+    except FileNotFoundError:
+        print(f"Erro: Arquivo '{nome_arquivo}' não encontrado.")
+        print(f"Diretório atual: {os.getcwd()}")
+        exit()
 
-def dijkstra(matriz, mapa_nos, inicio, fim):
-    tamanho = len(mapa_nos)
-    idx_inicio = mapa_nos[inicio]
-    idx_fim = mapa_nos[fim]
+def distancia(cidade1, cidade2, grafo):
+    """Distância entre cidades (custo direto ou heurística)"""
+    if cidade2 in grafo[cidade1]:
+        return grafo[cidade1][cidade2]
+    return float('inf')  # Sem conexão direta
+
+def expandir(grafo, arvore, cidade_alvo, max_passos=1000):
+    """Expande uma árvore em direção a um alvo"""
+    cidade_prox = min(arvore.keys(), key=lambda x: distancia(x, cidade_alvo, grafo))
     
-    distancias = [float('inf')] * tamanho
-    distancias[idx_inicio] = 0
-    predecessores = [None] * tamanho
-    fila_prioridade = [(0, idx_inicio)]
+    if cidade_prox == cidade_alvo:
+        return cidade_alvo
     
-    while fila_prioridade:
-        dist_atual, idx_atual = heappop(fila_prioridade)
+    # Tenta encontrar conexão direta
+    if cidade_alvo in grafo[cidade_prox]:
+        custo = grafo[cidade_prox][cidade_alvo]
+        if custo <= max_passos:
+            arvore[cidade_alvo] = cidade_prox
+            return cidade_alvo
+    
+    # Se não, escolhe uma cidade vizinha aleatória
+    vizinhos = list(grafo[cidade_prox].keys())
+    if not vizinhos:
+        return cidade_prox
+    
+    cidade_nova = random.choice(vizinhos)
+    arvore[cidade_nova] = cidade_prox
+    return cidade_nova
+
+def rrt_connect(grafo, inicio, objetivo, iteracoes=10000):
+    """Implementação do RRT-Connect para encontrar caminho"""
+    arvore_a = {inicio: None}
+    arvore_b = {objetivo: None}
+    
+    for _ in range(iteracoes):
+        # Expande árvore A
+        cidade_aleatoria = random.choice(list(grafo.keys()))
+        nova_a = expandir(grafo, arvore_a, cidade_aleatoria)
         
-        if idx_atual == idx_fim:
-            break
+        # Expande árvore B em direção a nova_a
+        nova_b = expandir(grafo, arvore_b, nova_a)
         
-        if dist_atual > distancias[idx_atual]:
-            continue
+        # Verifica conexão
+        if nova_b in arvore_a:
+            caminho = []
+            # Constrói caminho do início ao ponto de conexão
+            cidade = nova_b
+            while cidade is not None:
+                caminho.append(cidade)
+                cidade = arvore_a[cidade]
+            caminho = caminho[::-1]
+            
+            # Adiciona do ponto de conexão ao objetivo
+            cidade = arvore_b[nova_b]
+            while cidade is not None:
+                caminho.append(cidade)
+                cidade = arvore_b[cidade]
+            
+            return caminho, calcular_custo(caminho, grafo)
         
-        for vizinho in range(tamanho):
-            custo = matriz[idx_atual][vizinho]
-            if custo != float('inf'):
-                dist = dist_atual + custo
-                if dist < distancias[vizinho]:
-                    distancias[vizinho] = dist
-                    predecessores[vizinho] = idx_atual
-                    heappush(fila_prioridade, (dist, vizinho))
+        # Troca as árvores
+        arvore_a, arvore_b = arvore_b, arvore_a
     
-    # Reconstruir caminho
-    caminho = []
-    idx_atual = idx_fim
-    while idx_atual is not None:
-        caminho.append(idx_atual)
-        idx_atual = predecessores[idx_atual]
-    caminho.reverse()
-    
-    # Converter índices para nomes de cidades
-    mapa_inverso = {v: k for k, v in mapa_nos.items()}
-    caminho_cidades = [mapa_inverso[idx] for idx in caminho]
-    
-    return caminho_cidades, distancias[idx_fim]
+    return None, float('inf')
+
+def calcular_custo(caminho, grafo):
+    """Calcula o custo total do caminho"""
+    custo_total = 0
+    for i in range(len(caminho)-1):
+        custo_total += grafo[caminho[i]][caminho[i+1]]
+    return custo_total
 
 def main():
-    print("Sistema de Rotas Entre Cidades Europeias")
-    print("Carregando dados...")
-    
-    matriz, mapa_nos = importar_grafo_csv('cidades.csv')
-    cidades = sorted(mapa_nos.keys())
+    print("Sistema de Rotas com RRT-Connect")
+    grafo, cidades = importar_grafo_csv('cidades.csv')
     
     print("\nCidades disponíveis:")
     for i, cidade in enumerate(cidades, 1):
@@ -83,23 +109,22 @@ def main():
     
     while True:
         try:
-            inicio_idx = int(input("\nDigite o número da cidade de início: ")) - 1
-            fim_idx = int(input("Digite o número da cidade de destino: ")) - 1
-            cidade_inicio = cidades[inicio_idx]
-            cidade_fim = cidades[fim_idx]
+            inicio_idx = int(input("\nNúmero da cidade de início: ")) - 1
+            fim_idx = int(input("Número da cidade de destino: ")) - 1
+            inicio, fim = cidades[inicio_idx], cidades[fim_idx]
             break
         except (ValueError, IndexError):
-            print("Entrada inválida. Por favor, digite números correspondentes às cidades listadas.")
+            print("Entrada inválida. Tente novamente.")
     
-    print(f"\nCalculando rota de {cidade_inicio} para {cidade_fim}...")
-    caminho, custo_total = dijkstra(matriz, mapa_nos, cidade_inicio, cidade_fim)
+    print(f"\nCalculando rota de {inicio} para {fim}...")
+    caminho, custo = rrt_connect(grafo, inicio, fim)
     
-    if custo_total == float('inf'):
-        print("\nNão existe caminho entre as cidades selecionadas.")
+    if caminho:
+        print("\nRota encontrada:")
+        print(" → ".join(caminho))
+        print(f"Custo total: €{custo:.2f}")
     else:
-        print("\nMelhor caminho encontrado:")
-        print(" -> ".join(caminho))
-        print(f"\nCusto total (pedágio + combustível): €{custo_total:.2f}")
+        print("\nNão foi possível encontrar um caminho.")
 
 if __name__ == "__main__":
     main()
