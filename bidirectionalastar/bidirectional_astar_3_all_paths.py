@@ -12,8 +12,8 @@ class BidirectionalAStar:
         self.s_start = s_start
         self.s_goal = s_goal
         self.heuristic_type = heuristic_type
-        self.graph = graph  # adjacency list representation of graph
-        self.weights = weights  # Weights for kms, litros, and minutos
+        self.graph = graph
+        self.weights = weights
 
         self.OPEN_fore = []
         self.OPEN_back = []
@@ -26,7 +26,6 @@ class BidirectionalAStar:
         self.all_paths = []
 
     def init(self):
-        """Initialize search structures."""
         self.g_fore[self.s_start] = 0.0
         self.g_back[self.s_goal] = 0.0
         self.PARENT_fore[self.s_start] = None
@@ -36,7 +35,6 @@ class BidirectionalAStar:
         heapq.heappush(self.OPEN_back, (self.f_value_back(self.s_goal), self.s_goal))
 
     def searching(self):
-        """Perform bidirectional A* search."""
         self.init()
         s_meet = None
 
@@ -75,7 +73,6 @@ class BidirectionalAStar:
         return self.graph.get(s, {}).keys()
 
     def extract_path(self, s_meet):
-        """Reconstruct the optimal path."""
         path_fore = []
         s = s_meet
         while s is not None:
@@ -97,8 +94,7 @@ class BidirectionalAStar:
         return self.g_back.get(s, math.inf) + self.h(s, self.s_start)
 
     def h(self, s, goal):
-        """Heuristic function (currently disabled)."""
-        return 0  # Can be modified if a heuristic is needed
+        return 0
 
     def cost(self, s_start, s_goal):
         edge = self.graph[s_start][s_goal]
@@ -120,7 +116,6 @@ class BidirectionalAStar:
 
 
 def load_graph_from_csv(filename):
-    """Load graph data from CSV file with bidirectional edges."""
     df = pd.read_csv(filename, header=None, names=["start", "end", "kms", "litros", "minutos"])
     graph = {}
 
@@ -134,18 +129,18 @@ def load_graph_from_csv(filename):
             graph[end] = {}
 
         graph[start][end] = edge_data
-        graph[end][start] = edge_data  # Ensure bidirectional edges
+        graph[end][start] = edge_data
 
     return graph
 
 
 def main():
-    filename = "../graph/graph3.csv"  # Adjust this if needed
+    filename = "../graph/graph3.csv"
     graph = load_graph_from_csv(filename)
 
     start_node = "A"
     goal_node = "L"
-    weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}  # Adjustable weights
+    weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
     bastar = BidirectionalAStar(start_node, goal_node, "none", graph, weights)
     all_paths = bastar.searching()
@@ -158,7 +153,6 @@ def main():
         for path in all_paths:
             total_kms, total_litros, total_minutos = bastar.get_path_cost(path)
 
-            # Compare and select the optimal paths for each variable
             if total_kms < best_kms:
                 best_kms = total_kms
                 best_path_kms = path
