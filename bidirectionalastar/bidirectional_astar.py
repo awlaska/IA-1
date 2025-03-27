@@ -117,7 +117,7 @@ class BidirectionalAStarGraph:
 
 
 if __name__ == "__main__":
-    graph = load_graph_from_csv("../graph/graph.csv")
+    graph = load_graph_from_csv("../graph.csv")
     start, goal = "A", "H"
 
     bi_astar = BidirectionalAStarGraph(graph, start, goal)
