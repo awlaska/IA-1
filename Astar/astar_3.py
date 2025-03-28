@@ -1,6 +1,9 @@
 import csv
 import heapq
 
+from Astar.astar_3_all_paths import nome_ficheiro, inicio, fim
+
+
 def importar_grafo_csv_3(nome_ficheiro):
     # Dicionário para mapear nós a índices
     mapa_nos = {}
@@ -9,7 +12,7 @@ def importar_grafo_csv_3(nome_ficheiro):
     arestas = []
 
     # Ler o ficheiro CSV e armazenar as arestas
-    with open(nome_ficheiro, newline='', encoding='utf-8') as ficheiro:
+    with open("../" + nome_ficheiro, newline='', encoding='utf-8') as ficheiro:
         leitor = csv.reader(ficheiro)
         next(leitor)  # Pula a primeira linha (cabeçalho)
         
@@ -93,9 +96,6 @@ def calcular_custos_individuais(matriz_adjacencia, mapa_nos, caminho):
     return toll_total, fuel_total, distance_total
 
 # Solicitar ao usuário o nome do arquivo CSV, a cidade de início e a cidade de chegada
-nome_ficheiro = input("Introduza o nome do ficheiro CSV (ex: exemplo.csv): ")
-inicio = input("Introduza a cidade de início: ")
-fim = input("Introduza a cidade de chegada: ")
 
 # Carregar o grafo a partir do arquivo CSV
 try:

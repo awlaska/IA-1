@@ -1,5 +1,3 @@
-from collections import deque
-
 class AStar:
 
     def __init__(self, adjacency_list):
