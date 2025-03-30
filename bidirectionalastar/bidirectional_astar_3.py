@@ -123,21 +123,28 @@ def load_graph_from_csv(filename):
     return graph
 
 def main():
-    choice = input("1. graph3.csv\n2. cidades.csv\n3. graph3_2.csv")
-    if choice == 1:
+    choice = input("1. graph3.csv\n2. cidades.csv\n3. graph3_2.csv\n- ")
+    if choice == "1":
         filename = "../graph3.csv"
         graph = load_graph_from_csv(filename)
-    if choice == 2:
+        start_node = "A"
+        goal_node = "T"
+    if choice == "2":
         filename = "../cidades.csv"
         graph = load_graph_from_csv(filename)
-        if choice == 3:
-            filename ="../graph3_2.csv"
-    else:
-        filename = "../graph3.csv"
+        start_node = "Barcelona"
+        goal_node = "Zagreb"
+    if choice == "3":
+        filename ="../graph3_2.csv"
         graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "L"
+    else:
+        filename = "../graph3_2.csv"
+        graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "L"
 
-    start_node = "A"
-    goal_node = "L"
     weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
     bastar = BidirectionalAStar(start_node, goal_node, "none", graph, weights)

@@ -1,41 +1,64 @@
 import csv
 import heapq
 
-from Astar.astar_3_all_paths import nome_ficheiro, inicio, fim
-
-
-def importar_grafo_csv_3(nome_ficheiro):
-    # Dicionário para mapear nós a índices
+def importar_grafo_csv(nome_ficheiro):
     mapa_nos = {}
-
-    # Lista para armazenar arestas lidas do CSV
     arestas = []
 
-    # Ler o ficheiro CSV e armazenar as arestas
     with open("../" + nome_ficheiro, newline='', encoding='utf-8') as ficheiro:
         leitor = csv.reader(ficheiro)
-        next(leitor)  # Pula a primeira linha (cabeçalho)
-        
+        next(leitor)  # Ignora o cabeçalho
+
         for linha in leitor:
-            origin_city, destination_city, toll, fuel, distance_km = linha[0], linha[1], float(linha[2]), float(linha[3]), float(linha[4])
+            origin_city, destination_city, toll, fuel, distance_km = linha[0], linha[1], float(linha[2]), float(
+                linha[3]), float(linha[4])
             arestas.append((origin_city, destination_city, toll, fuel, distance_km))
 
-            # Adicionar nós ao dicionário se ainda não estiverem mapeados
             if origin_city not in mapa_nos:
                 mapa_nos[origin_city] = len(mapa_nos)
             if destination_city not in mapa_nos:
                 mapa_nos[destination_city] = len(mapa_nos)
 
-    # Criar matriz de adjacência
     tamanho = len(mapa_nos)
-    matriz_adjacencia = [[None for _ in range(tamanho)] for _ in range(tamanho)]  # Inicializa com None
+    matriz_adjacencia = [[None for _ in range(tamanho)] for _ in range(tamanho)]
 
-    # Preencher matriz com os valores das arestas
     for origin_city, destination_city, toll, fuel, distance_km in arestas:
         i, j = mapa_nos[origin_city], mapa_nos[destination_city]
         matriz_adjacencia[i][j] = {'toll': toll, 'fuel': fuel, 'distance_km': distance_km}
 
     return matriz_adjacencia, mapa_nos
+
+def importar_grafo_csv_3():
+    choice = -1
+    while choice != "0":
+        choice = input("1. cidades.csv\n2. graph3.csv\n3. graph3_2.csv\n- ")
+        if choice == "1":
+            nome_ficheiro = "cidades.csv"
+            matriz, mapa_nos = importar_grafo_csv(nome_ficheiro)
+
+            cidades = sorted(mapa_nos.keys())
+
+            print("\nCidades disponíveis:")
+            for i, cidade in enumerate(cidades, 1):
+                print(f"{i}. {cidade}")
+
+            while True:
+                try:
+                    inicio_idx = int(input("\nDigite o número da cidade de início: ")) - 1
+                    fim_idx = int(input("Digite o número da cidade de destino: ")) - 1
+                    inicio = cidades[inicio_idx]
+                    fim = cidades[fim_idx]
+                    break
+                except (ValueError, IndexError):
+                    print("Entrada inválida. Por favor, escolha um número válido.")
+
+            return nome_ficheiro, inicio, fim  # Retorna o nome do arquivo e as cidades corretamente
+
+        elif choice == "2":
+            return "graph3.csv", "A", "T"
+
+        elif choice == "3":
+            return "graph3_2.csv", "A", "K"
 
 def a_star(matriz_adjacencia, mapa_nos, inicio, fim):
     # Verifica se as cidades de início e fim estão no mapa
@@ -80,7 +103,7 @@ def a_star(matriz_adjacencia, mapa_nos, inicio, fim):
     return None, float('inf')
 
 # Função para calcular os custos individuais de um caminho
-def calcular_custos_individuais(matriz_adjacencia, mapa_nos, caminho):
+def calcular_custos_individuais(nome_ficheiro, matriz_adjacencia, mapa_nos, caminho):
     toll_total = 0
     fuel_total = 0
     distance_total = 0
@@ -95,14 +118,8 @@ def calcular_custos_individuais(matriz_adjacencia, mapa_nos, caminho):
 
     return toll_total, fuel_total, distance_total
 
-# Solicitar ao usuário o nome do arquivo CSV, a cidade de início e a cidade de chegada
-
-# Carregar o grafo a partir do arquivo CSV
-try:
-    matriz_adjacencia, mapa_nos = importar_grafo_csv_3(nome_ficheiro)
-except FileNotFoundError:
-    print(f"Erro: O ficheiro '{nome_ficheiro}' não foi encontrado.")
-    exit()
+nome_ficheiro, inicio, fim = importar_grafo_csv_3()
+matriz_adjacencia, mapa_nos = importar_grafo_csv(nome_ficheiro)
 
 # Encontrar o caminho de menor custo entre as cidades
 caminho, custo_total = a_star(matriz_adjacencia, mapa_nos, inicio, fim)
@@ -111,9 +128,9 @@ caminho, custo_total = a_star(matriz_adjacencia, mapa_nos, inicio, fim)
 if caminho:
     print(f"\nCaminho encontrado: {' -> '.join(caminho)}")
     print(f"Custo total: {custo_total}")
-    
+
     # Calcular e exibir os custos individuais
-    toll_total, fuel_total, distance_total = calcular_custos_individuais(matriz_adjacencia, mapa_nos, caminho)
+    toll_total, fuel_total, distance_total = calcular_custos_individuais(nome_ficheiro, matriz_adjacencia, mapa_nos, caminho)
     print(f"Km Cost: {distance_total}")
     print(f"Toll Cost: {toll_total}")
     print(f"Fuel Cost: {fuel_total}")
