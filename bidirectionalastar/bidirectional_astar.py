@@ -2,26 +2,28 @@
 
 import csv
 import heapq
-import math
-
 
 def load_graph_from_csv(file_path):
     graph = {}
 
     with open(file_path, "r") as file:
         reader = csv.reader(file)
+        next(reader)  # Pula a primeira linha (cabeçalho)
+
         for row in reader:
-            node1, node2, cost = row[0], row[1], float(row[2])
-
-            if node1 not in graph:
-                graph[node1] = []
-            if node2 not in graph:
-                graph[node2] = []
-
-            graph[node1].append((node2, cost))
-            graph[node2].append((node1, cost))
+            try:
+                node1, node2, cost = row[0], row[1], float(row[2])
+                if node1 not in graph:
+                    graph[node1] = []
+                if node2 not in graph:
+                    graph[node2] = []
+                graph[node1].append((node2, cost))
+                graph[node2].append((node1, cost))
+            except ValueError:
+                print(f"Erro ao converter a linha: {row}")
 
     return graph
+
 
 
 class BidirectionalAStarGraph:

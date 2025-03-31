@@ -1,3 +1,4 @@
+import csv
 import os
 import sys
 import math
@@ -6,6 +7,32 @@ import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../bidirectionalastar/")
 
+def importar_grafo_csv(nome_ficheiro):
+    mapa_nos = {}
+    arestas = []
+
+    with open(nome_ficheiro, newline='', encoding='utf-8') as ficheiro:
+        leitor = csv.reader(ficheiro)
+        next(leitor)  # Ignora o cabeçalho
+
+        for linha in leitor:
+            origin_city, destination_city, toll, fuel, distance_km = linha[0], linha[1], float(linha[2]), float(
+                linha[3]), float(linha[4])
+            arestas.append((origin_city, destination_city, toll, fuel, distance_km))
+
+            if origin_city not in mapa_nos:
+                mapa_nos[origin_city] = len(mapa_nos)
+            if destination_city not in mapa_nos:
+                mapa_nos[destination_city] = len(mapa_nos)
+
+    tamanho = len(mapa_nos)
+    matriz_adjacencia = [[None for _ in range(tamanho)] for _ in range(tamanho)]
+
+    for origin_city, destination_city, toll, fuel, distance_km in arestas:
+        i, j = mapa_nos[origin_city], mapa_nos[destination_city]
+        matriz_adjacencia[i][j] = {'toll': toll, 'fuel': fuel, 'distance_km': distance_km}
+
+    return matriz_adjacencia, mapa_nos
 
 class BidirectionalAStar:
     def __init__(self, s_start, s_goal, heuristic_type, graph, weights):
@@ -122,8 +149,14 @@ class BidirectionalAStar:
 
 def load_graph_from_csv(filename):
     df = pd.read_csv(filename, header=None, names=["start", "end", "kms", "litros", "minutos"])
-    graph = {}
 
+    # Replace non-numeric values with NaN, then fill with 0 or another value
+    df.replace(to_replace="toll", value=0, inplace=True)  # Replace "toll" with 0
+    df["kms"] = pd.to_numeric(df["kms"], errors="coerce").fillna(0)
+    df["litros"] = pd.to_numeric(df["litros"], errors="coerce").fillna(0)
+    df["minutos"] = pd.to_numeric(df["minutos"], errors="coerce").fillna(0)
+
+    graph = {}
     for _, row in df.iterrows():
         start, end = row["start"], row["end"]
         edge_data = {"kms": row["kms"], "litros": row["litros"], "minutos": row["minutos"]}
@@ -140,11 +173,41 @@ def load_graph_from_csv(filename):
 
 
 def main():
-    filename = "../graph3.csv"
+    choice = input("1. cidades.csv\n2. graph3.csv\n3. graph3_2.csv\n- ")
+    if choice == "1":
+        filename = "../cidades.csv"
+        matriz, mapa_nos = importar_grafo_csv(filename)
+        cidades = sorted(mapa_nos.keys())
+        print("\nCidades disponíveis:")
+        for i, cidade in enumerate(cidades, 1):
+            print(f"{i}. {cidade}")
+
+        while True:
+            try:
+                inicio_idx = int(input("\nDigite o número da cidade de início: ")) - 1
+                fim_idx = int(input("Digite o número da cidade de destino: ")) - 1
+                start_node = cidades[inicio_idx]
+                goal_node = cidades[fim_idx]
+                break
+            except (ValueError, IndexError):
+                print("Entrada inválida. Por favor, escolha um número válido.")
+    elif choice == "2":
+        filename = "../graph3.csv"
+        graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "T"
+    elif choice == "3":
+        filename = "../graph3_2.csv"
+        graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "L"
+    else:
+        filename = "../graph3_2.csv"
+        graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "B"
     graph = load_graph_from_csv(filename)
 
-    start_node = "A"
-    goal_node = "L"
     weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
     bastar = BidirectionalAStar(start_node, goal_node, "none", graph, weights)

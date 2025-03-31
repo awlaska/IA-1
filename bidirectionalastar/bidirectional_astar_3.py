@@ -106,6 +106,15 @@ class BidirectionalAStar:
 
 def load_graph_from_csv(filename):
     df = pd.read_csv(filename, header=None, names=["start", "end", "kms", "litros", "minutos"])
+
+    # Converte para float e força erros a serem substituídos por NaN
+    df["kms"] = pd.to_numeric(df["kms"], errors="coerce")
+    df["litros"] = pd.to_numeric(df["litros"], errors="coerce")
+    df["minutos"] = pd.to_numeric(df["minutos"], errors="coerce")
+
+    # Substitui valores NaN por 0 (ou algum outro valor apropriado)
+    df.fillna(0, inplace=True)
+
     graph = {}
 
     for _, row in df.iterrows():
@@ -123,18 +132,18 @@ def load_graph_from_csv(filename):
     return graph
 
 def main():
-    choice = input("1. graph3.csv\n2. cidades.csv\n3. graph3_2.csv\n- ")
+    choice = input("1. cidades.csv\n2. graph3.csv\n3. graph3_2.csv\n- ")
     if choice == "1":
-        filename = "../graph3.csv"
-        graph = load_graph_from_csv(filename)
-        start_node = "A"
-        goal_node = "T"
-    if choice == "2":
         filename = "../cidades.csv"
         graph = load_graph_from_csv(filename)
         start_node = "Barcelona"
         goal_node = "Zagreb"
-    if choice == "3":
+    elif choice == "2":
+        filename = "../graph3.csv"
+        graph = load_graph_from_csv(filename)
+        start_node = "A"
+        goal_node = "T"
+    elif choice == "3":
         filename ="../graph3_2.csv"
         graph = load_graph_from_csv(filename)
         start_node = "A"
@@ -143,7 +152,7 @@ def main():
         filename = "../graph3_2.csv"
         graph = load_graph_from_csv(filename)
         start_node = "A"
-        goal_node = "L"
+        goal_node = "B"
 
     weights = {"kms": 1.0, "litros": 1.0, "minutos": 1.0}
 
